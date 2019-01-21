@@ -43,6 +43,7 @@ from libs.pascal_voc_io import PascalVocReader
 from libs.pascal_voc_io import XML_EXT
 from libs.yolo_io import YoloReader
 from libs.yolo_io import TXT_EXT
+from libs.ctpn_io import CtpnReader
 from libs.ustr import ustr
 from libs.version import __version__
 from libs.hashableQListWidgetItem import HashableQListWidgetItem
@@ -795,6 +796,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.canvas.loadShapes(s)
 
     def saveLabels(self, annotationFilePath):
+        print('qqqqqq', annotationFilePath)
         annotationFilePath = ustr(annotationFilePath)
         if self.labelFile is None:
             self.labelFile = LabelFile()
@@ -809,6 +811,7 @@ class MainWindow(QMainWindow, WindowMixin):
                         difficult = s.difficult)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
+        print(annotationFilePath)
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
@@ -822,8 +825,8 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.labelFile.saveYoloFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.usingCTPNFormat is True:
-                if annotationFilePath[-4:].lower() != ".txt":
-                    annotationFilePath += TXT_EXT
+                if annotationFilePath[-8:].lower() != "ctpn.txt":
+                    annotationFilePath += ('ctpn' +TXT_EXT)
                 self.labelFile.saveCTPNFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                               self.lineColor.getRgb(), self.fillColor.getRgb())
 
@@ -1047,23 +1050,29 @@ class MainWindow(QMainWindow, WindowMixin):
                 basename = os.path.basename(
                     os.path.splitext(self.filePath)[0])
                 xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-                txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
+                yoloTxtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
+                ctpnTxtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
 
                 """Annotation file priority:
                 PascalXML > YOLO
                 """
                 if os.path.isfile(xmlPath):
                     self.loadPascalXMLByFilename(xmlPath)
-                elif os.path.isfile(txtPath):
-                    self.loadYOLOTXTByFilename(txtPath)
+                elif os.path.isfile(yoloTxtPath):
+                    self.loadYOLOTXTByFilename(yoloTxtPath)
+                elif os.path.isfile(ctpnTxtPath):
+                    self.loadCTPNTXTByFilename(ctpnTxtPath)
+
             else:
                 xmlPath = os.path.splitext(filePath)[0] + XML_EXT
-                txtPath = os.path.splitext(filePath)[0] + TXT_EXT
+                yoloTxtPath = os.path.splitext(filePath)[0] + TXT_EXT
+                ctpnTxtPath = os.path.splitext(filePath)[0] + TXT_EXT
                 if os.path.isfile(xmlPath):
                     self.loadPascalXMLByFilename(xmlPath)
-                elif os.path.isfile(txtPath):
-                    self.loadYOLOTXTByFilename(txtPath)
-
+                elif os.path.isfile(yoloTxtPath):
+                    self.loadYOLOTXTByFilename(yoloTxtPath)
+                elif os.path.isfile(ctpnTxtPath):
+                    self.loadCTPNTXTByFilename(ctpnTxtPath)
             self.setWindowTitle(__appname__ + ' ' + filePath)
 
             # Default : select last item if there is at least one item
@@ -1307,6 +1316,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.filePath:
                 imgFileName = os.path.basename(self.filePath)
                 savedFileName = os.path.splitext(imgFileName)[0]
+                print(savedFileName)
                 savedPath = os.path.join(ustr(self.defaultSaveDir), savedFileName)
                 self._saveFile(savedPath)
         else:
@@ -1314,8 +1324,9 @@ class MainWindow(QMainWindow, WindowMixin):
             imgFileName = os.path.basename(self.filePath)
             savedFileName = os.path.splitext(imgFileName)[0]
             savedPath = os.path.join(imgFileDir, savedFileName)
+            print(savedFileName)
             self._saveFile(savedPath if self.labelFile
-                           else self.saveFileDialog(removeExt=False))
+                           else self.saveFileDialog(removeExt=True))
 
     def saveFileAs(self, _value=False):
         assert not self.image.isNull(), "cannot save empty image"
@@ -1452,6 +1463,20 @@ class MainWindow(QMainWindow, WindowMixin):
         print (shapes)
         self.loadLabels(shapes)
         self.canvas.verified = tYoloParseReader.verified
+
+
+    def loadCTPNTXTByFilename(self, txtPath):
+        if self.filePath is None:
+            return
+        if os.path.isfile(txtPath) is False:
+            return
+
+        self.set_format(FORMAT_CTPN)
+        tCtpnParseReader = CtpnReader(txtPath, self.image)
+        shapes = tCtpnParseReader.getShapes()
+        print (shapes)
+        self.loadLabels(shapes)
+        self.canvas.verified = tCtpnParseReader.verified
 
     def togglePaintLabelsOption(self):
         for shape in self.canvas.shapes:

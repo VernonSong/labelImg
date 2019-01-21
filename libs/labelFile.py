@@ -87,6 +87,7 @@ class LabelFile(object):
     # TODO 直接在这里进行切分
     def saveCTPNFormat(self, filename, shapes, imagePath, imageData, classList,
                             lineColor=None, fillColor=None, databaseSrc=None):
+        print(filename)
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)

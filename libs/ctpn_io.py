@@ -47,7 +47,7 @@ class CtpnWriter:
 
         if targetFile is None:
             out_file = open(
-            self.filename + TXT_EXT, 'w', encoding=ENCODE_METHOD)
+            self.filename + 'ctpn' + TXT_EXT, 'w', encoding=ENCODE_METHOD)
         else:
             out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
 
@@ -77,16 +77,16 @@ class CtpnReader:
         self.shapes = []
         self.filepath = filepath
 
-        if classListPath is None:
-            dir_path = os.path.dirname(os.path.realpath(self.filepath))
-            self.classListPath = os.path.join(dir_path, "classes.txt")
-        else:
-            self.classListPath = classListPath
+        # if classListPath is None:
+        #     dir_path = os.path.dirname(os.path.realpath(self.filepath))
+        #     self.classListPath = os.path.join(dir_path, "classes.txt")
+        # else:
+        #     self.classListPath = classListPath
 
         # print (filepath, self.classListPath)
 
-        classesFile = open(self.classListPath, 'r')
-        self.classes = classesFile.read().strip('\n').split('\n')
+        # classesFile = open(self.classListPath, 'r')
+        # self.classes = classesFile.read().strip('\n').split('\n')
 
         # print (self.classes)
 
@@ -97,7 +97,7 @@ class CtpnReader:
 
         self.verified = False
         # try:
-        self.parseYoloFormat()
+        self.parseCtpnFormat()
         # except:
             # pass
 
@@ -109,26 +109,26 @@ class CtpnReader:
         points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
         self.shapes.append((label, points, None, None, difficult))
 
-    def yoloLine2Shape(self, classIndex, xcen, ycen, w, h):
-        label = self.classes[int(classIndex)]
+    def CtpnLine2Shape(self, x1, y1, x2, y2, x3, y3, x4, y4):
+        label = self.classes['text']
 
-        xmin = max(float(xcen) - float(w) / 2, 0)
-        xmax = min(float(xcen) + float(w) / 2, 1)
-        ymin = max(float(ycen) - float(h) / 2, 0)
-        ymax = min(float(ycen) + float(h) / 2, 1)
+        xmin = x1
+        xmax = x2
+        ymin = y1
+        ymax = y3
 
-        xmin = int(self.imgSize[1] * xmin)
-        xmax = int(self.imgSize[1] * xmax)
-        ymin = int(self.imgSize[0] * ymin)
-        ymax = int(self.imgSize[0] * ymax)
+        # xmin = int(self.imgSize[1] * xmin)
+        # xmax = int(self.imgSize[1] * xmax)
+        # ymin = int(self.imgSize[0] * ymin)
+        # ymax = int(self.imgSize[0] * ymax)
 
         return label, xmin, ymin, xmax, ymax
 
-    def parseYoloFormat(self):
+    def parseCtpnFormat(self):
         bndBoxFile = open(self.filepath, 'r')
         for bndBox in bndBoxFile:
-            classIndex, xcen, ycen, w, h = bndBox.split(' ')
-            label, xmin, ymin, xmax, ymax = self.yoloLine2Shape(classIndex, xcen, ycen, w, h)
+            x1, y1, x2, y2, x3, y3, x4, y4 = bndBox.split(',')
+            label, xmin, ymin, xmax, ymax = self.CtpnLine2Shape(x1, y1, x2, y2, x3, y3, x4, y4)
 
             # Caveat: difficult flag is discarded when saved as yolo format.
             self.addShape(label, xmin, ymin, xmax, ymax, False)

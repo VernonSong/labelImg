@@ -9,6 +9,7 @@ except ImportError:
 from base64 import b64encode, b64decode
 from libs.pascal_voc_io import PascalVocWriter
 from libs.yolo_io import YOLOWriter
+from libs.ctpn_io import CtpnWriter
 from libs.pascal_voc_io import XML_EXT
 import os.path
 import sys
@@ -69,6 +70,34 @@ class LabelFile(object):
         imageShape = [image.height(), image.width(),
                       1 if image.isGrayscale() else 3]
         writer = YOLOWriter(imgFolderName, imgFileName,
+                                 imageShape, localImgPath=imagePath)
+        writer.verified = self.verified
+
+        for shape in shapes:
+            points = shape['points']
+            label = shape['label']
+            # Add Chris
+            difficult = int(shape['difficult'])
+            bndbox = LabelFile.convertPoints2BndBox(points)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult)
+
+        writer.save(targetFile=filename, classList=classList)
+        return
+
+    # TODO 直接在这里进行切分
+    def saveCTPNFormat(self, filename, shapes, imagePath, imageData, classList,
+                            lineColor=None, fillColor=None, databaseSrc=None):
+        imgFolderPath = os.path.dirname(imagePath)
+        imgFolderName = os.path.split(imgFolderPath)[-1]
+        imgFileName = os.path.basename(imagePath)
+        #imgFileNameWithoutExt = os.path.splitext(imgFileName)[0]
+        # Read from file path because self.imageData might be empty if saving to
+        # Pascal format
+        image = QImage()
+        image.load(imagePath)
+        imageShape = [image.height(), image.width(),
+                      1 if image.isGrayscale() else 3]
+        writer = CtpnWriter(imgFolderName, imgFileName,
                                  imageShape, localImgPath=imagePath)
         writer.verified = self.verified
 

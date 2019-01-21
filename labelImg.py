@@ -96,8 +96,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Save as Pascal voc xml
         self.defaultSaveDir = defaultSaveDir
-        self.usingPascalVocFormat = True
+        self.usingPascalVocFormat = False
         self.usingYoloFormat = False
+        self.usingCTPNFormat = True
 
         # For loading all image under a directory
         self.mImgList = []
@@ -513,9 +514,19 @@ class MainWindow(QMainWindow, WindowMixin):
             self.usingYoloFormat = True
             LabelFile.suffix = TXT_EXT
 
+        elif save_format == FORMAT_CTPN:
+            self.actions.save_format.setText(FORMAT_CTPN)
+            # TODO 更换图标
+            self.actions.save_format.setIcon(newIcon("format_yolo"))
+            self.usingPascalVocFormat = False
+            self.usingYoloFormat = False
+            self.usingCTPNFormat = True
+            LabelFile.suffix = TXT_EXT
+
     def change_format(self):
         if self.usingPascalVocFormat: self.set_format(FORMAT_YOLO)
-        elif self.usingYoloFormat: self.set_format(FORMAT_PASCALVOC)
+        elif self.usingYoloFormat: self.set_format(FORMAT_CTPN)
+        elif self.usingCTPNFormat: self.set_format(FORMAT_PASCALVOC)
 
     def noShapes(self):
         return not self.itemsToShapes
@@ -810,6 +821,12 @@ class MainWindow(QMainWindow, WindowMixin):
                     annotationFilePath += TXT_EXT
                 self.labelFile.saveYoloFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
+            elif self.usingCTPNFormat is True:
+                if annotationFilePath[-4:].lower() != ".txt":
+                    annotationFilePath += TXT_EXT
+                self.labelFile.saveCTPNFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
+                                              self.lineColor.getRgb(), self.fillColor.getRgb())
+
             else:
                 self.labelFile.save(annotationFilePath, shapes, self.filePath, self.imageData,
                                     self.lineColor.getRgb(), self.fillColor.getRgb())
